@@ -4,6 +4,10 @@ import { Component } from 'react';
 import { ConnectedViewportGrid } from './../components/ViewportGrid/index.js';
 import PropTypes from 'prop-types';
 import React from 'react';
+import memoize from 'lodash/memoize';
+import _values from 'lodash/values';
+
+var values = memoize(_values);
 
 class ViewerMain extends Component {
   static propTypes = {
@@ -129,25 +133,35 @@ class ViewerMain extends Component {
     StudyInstanceUID,
     displaySetInstanceUID,
   }) => {
-    const displaySet = this.findDisplaySet(
+    let displaySet = this.findDisplaySet(
       this.props.studies,
       StudyInstanceUID,
       displaySetInstanceUID
     );
+
+    if (displaySet.isDerived) {
+      const { Modality } = displaySet;
+      displaySet = displaySet.getSourceDisplaySet(this.props.studies);
+
+      if (!displaySet) {
+        throw new Error(
+          `Referenced series for ${Modality} dataset not present.`
+        );
+      }
+    }
 
     this.props.setViewportSpecificData(viewportIndex, displaySet);
   };
 
   render() {
     const { viewportSpecificData } = this.props;
-    const viewportData = viewportSpecificData
-      ? Object.values(viewportSpecificData)
-      : [];
+    const viewportData = values(viewportSpecificData);
 
     return (
       <div className="ViewerMain">
         {this.state.displaySets.length && (
           <ConnectedViewportGrid
+            isStudyLoaded={this.props.isStudyLoaded}
             studies={this.props.studies}
             viewportData={viewportData}
             setViewportData={this.setViewportData}
