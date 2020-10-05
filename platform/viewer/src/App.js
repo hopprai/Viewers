@@ -86,6 +86,7 @@ class App extends Component {
       PropTypes.func,
       PropTypes.shape({
         routerBasename: PropTypes.string.isRequired,
+        user: PropTypes.object,
         oidc: PropTypes.array,
         whiteLabeling: PropTypes.shape({
           createLogoComponentFn: PropTypes.func,
@@ -98,6 +99,8 @@ class App extends Component {
 
   static defaultProps = {
     config: {
+      whiteLabelling: {},
+      user: {},
       showStudyList: true,
       oidc: [],
       extensions: [],
@@ -131,9 +134,8 @@ class App extends Component {
       cornerstoneExtensionConfig,
       extensions,
       oidc,
+      user,
     } = this._appConfig;
-
-    setConfiguration(this._appConfig);
 
     this.initUserManager(oidc);
     _initServices([
@@ -222,7 +224,7 @@ class App extends Component {
     );
   }
 
-  initUserManager(oidc) {
+  initUserManager(user, oidc) {
     if (oidc && !!oidc.length) {
       const firstOpenIdClient = this._appConfig.oidc[0];
 
@@ -252,7 +254,11 @@ class App extends Component {
         store,
         openIdConnectConfiguration
       );
+    } else {
+      this._userManager = getUserManagerForOpenIdConnectClient(store, {});
     }
+
+    this._userManager.storeUser(user);
   }
 }
 
